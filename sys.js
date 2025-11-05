@@ -35,10 +35,13 @@ function rotateSeesaw(newAngle) {
 
 // check if two rectangles overlap
 function checkOverlap(rect1, rect2) {
-    return !(rect1.x + rect1.width < rect2.x || 
-             rect2.x + rect2.width < rect1.x || 
-             rect1.y + rect1.height < rect2.y || 
-             rect2.y + rect2.height < rect1.y);
+    if (rect1.x < rect2.x + rect2.width && 
+        rect2.x < rect1.x + rect1.width && 
+        rect1.y < rect2.y + rect2.height && 
+        rect2.y < rect1.y + rect1.height) {
+        return true;
+    }
+    return false;
 }
 
 function getBounds(el) {
@@ -55,22 +58,21 @@ function getBounds(el) {
 }
 
 // watch for collision while falling
-function watchCollision(fallingEl, data) {
+function checkCollision(ball, data) {
     function check() {
-        const objBounds = getBounds(fallingEl);
+        const objBounds = getBounds(ball);
         const barBounds = getBounds(document.querySelector('.bar'));
         
         if (checkOverlap(objBounds, barBounds)) {
-            // hit the bar!
-            fallingEl.style.animation = 'none';
-            document.querySelector('.seesaw_container').removeChild(fallingEl);
+            ball.style.animation = 'none';
+            document.querySelector('.seesaw_container').removeChild(ball);
             addToBar(data);
             recalculate();
             saveToStorage();
             return;
         }
         
-        if (fallingEl.parentNode) {
+        if (ball.parentNode) {
             requestAnimationFrame(check);
         }
     }
@@ -78,7 +80,7 @@ function watchCollision(fallingEl, data) {
 }
 
 // make a falling object
-function makeFallingObj(data) {
+function objectFall(data) {
     const div = document.createElement('div');
     div.className = 'seesaw-object falling';
     div.textContent = data.weight + 'kg';
@@ -88,11 +90,10 @@ function makeFallingObj(data) {
     const centerX = container.offsetWidth / 2;
     
     div.style.left = (centerX + data.position - 20) + 'px';
-    div.style.top = '0px';
     div.style.animation = 'fallDown 2s linear forwards';
     
     container.appendChild(div);
-    watchCollision(div, data);
+    checkCollision(div, data);
     
     // backup in case collision fails
     setTimeout(() => {
@@ -109,9 +110,9 @@ function makeFallingObj(data) {
 }
 
 function getColor(weight) {
-    const intensity = weight / 10;
-    const blue = Math.floor(100 + (155 * intensity));
-    return `rgb(50, 150, ${blue})`;
+    const seed = weight * 123456;
+    let randomColor = Math.floor(seed % 16777215).toString(16).padStart(6, '0');
+    return "#" + randomColor;
 }
 
 // add object to the bar 
@@ -123,7 +124,7 @@ function addToBar(data) {
     
     const bar = document.querySelector('.bar');
     div.style.left = (200 + data.position - 20) + 'px';
-    div.style.top = '-50px';
+    div.style.top = '-20px';
     
     bar.appendChild(div);
     data.element = div;
@@ -137,7 +138,7 @@ function clearObjects() {
 }
 
 // recreate all objects after loading
-function recreateObjects() {
+function createObjects() {
     clearObjects();
     
     objects.forEach(data => {
@@ -175,6 +176,7 @@ function onClick(e) {
     const pos = getPosition(e.clientX, e.target);
     const weight = nextW;
     
+    //position check
     if (pos < MIN_POS || pos > MAX_POS) {
         log('Click outside range!');
         return;
@@ -192,14 +194,14 @@ function onClick(e) {
     };
     
     objects.push(obj);
-    makeFallingObj(obj);
+    objectFall(obj);
     
     nextW = randomWeight();
     updateDisplay();
     
-    const side = isLeft(pos) ? 'LEFT' : 'RIGHT';
+    const side = isLeft(pos) ? 'left' : 'right';
     const dist = Math.abs(pos);
-    log(`${weight}kg dropped on ${side}, ${dist.toFixed(1)}px from center`);
+    log(`${weight}kg dropped on ${side} side, ${dist.toFixed(1)}px from center`);
 }
 
 // torque calc
@@ -277,7 +279,7 @@ function loadFromStorage() {
             rightWeight = state.rightWeight || 0;
             nextW = state.nextW || randomWeight();
             
-            recreateObjects();
+            createObjects();
         }
     } catch (error) {
         log('Load failed: ' + error.message);
@@ -324,7 +326,7 @@ function testObj(pos, weight) {
     };
     
     objects.push(obj);
-    makeFallingObj(obj);
+    objectFall(obj);
     
     return obj;
 }
