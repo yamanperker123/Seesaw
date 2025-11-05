@@ -301,6 +301,18 @@ function convertClickToPosition(clickX, clickableElement) {
     return relativeX - (CONSTANTS.BAR_WIDTH / 2); 
 }
 
+function playDropSound() {
+    try {
+        const audio = new Audio('assets/water-drip-45622.mp3');
+        audio.volume = 0.1; // Set volume to 30%
+        audio.play().catch(error => {
+            console.log('Audio play failed:', error);
+        });
+    } catch (error) {
+        console.log('Audio creation failed:', error);
+    }
+}
+
 function handleClickableClick(event) {
     // COOLDOWN check
     if (isClickCooldown) {
@@ -311,6 +323,9 @@ function handleClickableClick(event) {
     const clickableElement = event.target;
     const clickPosition = convertClickToPosition(event.clientX, clickableElement);
     
+    // Create click effect at mouse position
+    createClickEffect(event.clientX, event.clientY);
+    
     // Use current nextWeight
     const currentWeight = nextWeight;
     
@@ -318,6 +333,9 @@ function handleClickableClick(event) {
         logToConsole('Click outside allowed area!');
         return;
     }
+    
+    // Play drop sound effect
+    playDropSound();
     
     // Start COOLDOWN
     isClickCooldown = true;
@@ -336,6 +354,27 @@ function handleClickableClick(event) {
     updateUI();
     
     logToConsole(`${currentWeight}kg object dropped (position: ${clickPosition.toFixed(1)})`);
+}
+
+function createClickEffect(x, y) {
+    // Create click effect element
+    const effect = document.createElement('div');
+    effect.className = 'click-effect';
+    
+    // Position at click coordinates (relative to viewport)
+    effect.style.left = (x - 10) + 'px'; // -10 to center the 20px circle
+    effect.style.top = (y - 10) + 'px';
+    effect.style.position = 'fixed'; // Use fixed positioning relative to viewport
+    
+    // Add to body
+    document.body.appendChild(effect);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        if (document.body.contains(effect)) {
+            document.body.removeChild(effect);
+        }
+    }, 600); // Match animation duration
 }
 
 // ==================== OBJECT MANAGEMENT ====================

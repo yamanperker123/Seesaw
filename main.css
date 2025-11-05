@@ -9,6 +9,7 @@ body {
     display: flex;
     justify-content: center;
     padding-top: 40px;
+    font-family: "Open Sans", sans-serif;
 }
 
 .main_container {
@@ -44,7 +45,8 @@ body {
 .item > .title {
     font-weight: normal;
     color: rgb(36, 36, 36);
-    font-size: 13px;
+    font-size: 14px;
+    margin-bottom: 5px;
 }
 
 
@@ -68,7 +70,8 @@ body {
     transform: translateX(-50%);
     width: 400px;
     height: 100%;
-    background: #21652d;
+    cursor: pointer;
+    /*background: #21652d;*/
 }
 
 .pivot {
