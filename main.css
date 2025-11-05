@@ -94,6 +94,8 @@ body {
     width: 400px;
     height: 10px;
     background: #654321;
+    transition: transform 0.8s ease-out;
+    transform-origin: center bottom;
 }
 
 .button {
@@ -131,21 +133,17 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 2px solid #333;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
     font-weight: bold;
     color: white;
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.8);
-    z-index: 10;
 }
 
 /* Düşen obje animasyonu */
 .seesaw-object.falling {
-    z-index: 15;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    animation: fallDown 2s linear forwards;
 }
 
 /* Animasyon keyframes */
