@@ -1,4 +1,4 @@
-// ==================== Data ====================
+// ==================== DATA STRUCTURE ====================
 
 const seesawState = {
     objects: [],        
@@ -19,11 +19,11 @@ const CONSTANTS = {
     TORQUE_SENSITIVITY: 10
 };
 
-// Global değişken - bir sonraki ağırlık ve cooldown
+// Global variable - next weight and cooldown
 let nextWeight = generateRandomWeight();
-let isClickCooldown = false; // Cooldown durumu
+let isClickCooldown = false; // Cooldown state
 
-// ==================== Auxiliary func ====================
+// ==================== HELPER FUNCTIONS ====================
 
 function generateRandomWeight() {
     return Math.floor(Math.random() * CONSTANTS.MAX_WEIGHT) + CONSTANTS.MIN_WEIGHT;
@@ -39,38 +39,38 @@ function logToConsole(message) {
     console.log(message); 
 }
 
-// ==================== Animation  ====================
+// ==================== ANIMATION FUNCTIONS ====================
 
 function animateSeesawRotation(newAngle) {
     const barElement = document.querySelector('.bar');
     
-    // Bar için CSS transition ve rotasyon - POZÄ°SYONU KORUYARAK
+    // CSS transition and rotation for bar - PRESERVING POSITION
     barElement.style.transition = 'transform 0.8s ease-out';
-    barElement.style.transformOrigin = 'center bottom'; // Alt merkez = pivot noktası
-    barElement.style.transform = `translateX(-50%) rotate(${newAngle}deg)`; // Merkez + döndürme
+    barElement.style.transformOrigin = 'center bottom'; // Bottom center = pivot point
+    barElement.style.transform = `translateX(-50%) rotate(${newAngle}deg)`; // Center + rotation
     
-    // Objeler bar içinde olduğu için otomatik olarak birlikte dönecek!
+    // Objects inside bar will automatically rotate together!
     
-    logToConsole(`Seesaw ${newAngle.toFixed(1)}° eğildi`);
+    logToConsole(`Seesaw tilted ${newAngle.toFixed(1)}°`);
 }
 
 function rotateObjectsWithBar(angle) {
     seesawState.objects.forEach(obj => {
         if (obj.element) {
             obj.element.style.transition = 'transform 0.8s ease-out';
-            // Objelerin pivot noktası da bar'ın pivot noktası ile aynı olmalı
-            // Bar'ın alt merkezine göre döndürme
+            // Object pivot point should be same as bar's pivot point
+            // Rotation relative to bar's bottom center
             const objRect = obj.element.getBoundingClientRect();
             const barElement = document.querySelector('.bar');
             const barRect = barElement.getBoundingClientRect();
             
-            // Bar'ın alt merkez noktasına göre transform-origin ayarla
+            // Set transform-origin relative to bar's bottom center point
             const barBottomCenterX = barRect.left + barRect.width / 2;
             const barBottomY = barRect.bottom;
             const objCenterX = objRect.left + objRect.width / 2;
             const objCenterY = objRect.top + objRect.height / 2;
             
-            // Relatif pozisyon hesapla
+            // Calculate relative position
             const relativeX = objCenterX - barBottomCenterX;
             const relativeY = objCenterY - barBottomY;
             
@@ -80,7 +80,7 @@ function rotateObjectsWithBar(angle) {
     });
 }
 
-// ==================== Collision Detection ====================
+// ==================== COLLISION DETECTION ====================
 
 function isCollide(a, b) {
     return !(
@@ -96,7 +96,7 @@ function getElementBounds(element) {
     const container = document.querySelector('.seesaw_container');
     const containerRect = container.getBoundingClientRect();
     
-    // Container'a göre relatif pozisyon
+    // Relative position to container
     return {
         x: rect.left - containerRect.left,
         y: rect.top - containerRect.top,
@@ -116,97 +116,97 @@ function startCollisionDetection(fallingElement, objData) {
         const barBounds = getBarBounds();
         
         if (isCollide(objectBounds, barBounds)) {
-            
+            // COLLISION DETECTED!
             handleCollision(fallingElement, objData);
-            return; 
+            return; // Stop animation
         }
         
-        // check object if it is falling or not
+        // Check if object is still falling
         if (fallingElement.parentNode) {
             requestAnimationFrame(checkCollision);
         }
     };
     
-   
+    // First check
     requestAnimationFrame(checkCollision);
 }
 
 function handleCollision(fallingElement, objData) {
-    // Stop and remove object
+    // Stop falling object and remove it
     fallingElement.style.animation = 'none';
     
-    // Remove from Container
+    // Remove from container
     const container = document.querySelector('.seesaw_container');
     if (container.contains(fallingElement)) {
         container.removeChild(fallingElement);
     }
     
-    //stick to bar
+    // Add permanently to bar
     createVisualObjectOnBar(objData);
     
-    // update Seesaw
+    // Update seesaw
     updateSeesaw();
     saveState();
     
-    logToConsole('Obje bara çarptı ve yapıştı!');
+    logToConsole('Object hit the bar and attached!');
 }
 
-// ==================== Falling animation ====================
+// ==================== FALLING ANIMATION ====================
 
 function createFallingObject(objData) {
-    // Düşecek objeyi oluştur
+    // Create falling object
     const circle = document.createElement('div');
     circle.className = 'seesaw-object falling';
     
-    // Ağırlık etiketi
+    // Weight label
     circle.textContent = objData.weight + 'kg';
     
-    // Sadece dinamik stiller (renk ve pozisyon)
+    // Only dynamic styles (color and position)
     circle.style.backgroundColor = getObjectColor(objData.weight);
     
-    // Container'a ekle (düşme sırasında)
+    // Add to container (during falling)
     const seesawContainer = document.querySelector('.seesaw_container');
     const containerWidth = seesawContainer.offsetWidth;
     const containerCenter = containerWidth / 2;
     
-    // Container TEPESINDEN başla
+    // Start from TOP of container
     const startX = containerCenter + objData.position - 20;
-    const startY = 0; // Container tepesinden
+    const startY = 0; // From container top
     
     circle.style.left = startX + 'px';
     circle.style.top = startY + 'px';
     
-    // UZUN animasyon - collision detection için yeterli zaman
+    // LONG animation - enough time for collision detection
     circle.style.animation = 'fallDown 2.0s linear forwards';
     
-    // Container'a ekle
+    // Add to container
     seesawContainer.appendChild(circle);
     
-    // COLLISION DETECTION başlat
+    // Start COLLISION DETECTION
     startCollisionDetection(circle, objData);
     
-    // Backup timeout (eğer collision detection başarısız olursa)
+    // Backup timeout (if collision detection fails)
     setTimeout(() => {
         if (seesawContainer.contains(circle)) {
             handleCollision(circle, objData);
         }
-    }, 2000); // 2 saniye backup
+    }, 2000); // 2 second backup
     
     return circle;
 }
 
 function createVisualObjectOnBar(objData) {
-    // Bar üzerinde kalıcı obje oluştur
+    // Create permanent object on bar
     const circle = document.createElement('div');
     circle.className = 'seesaw-object';
     
-    // Ağırlık etiketi
+    // Weight label
     circle.textContent = objData.weight + 'kg';
     
-    // Sadece dinamik stiller (renk ve pozisyon)
+    // Only dynamic styles (color and position)
     circle.style.backgroundColor = getObjectColor(objData.weight);
     
-    // Bar üzerindeki pozisyon
+    // Position on bar
     const barCenter = 200;
     const objectX = barCenter + objData.position - 20;
     const objectY = -50;
@@ -214,78 +214,78 @@ function createVisualObjectOnBar(objData) {
     circle.style.left = objectX + 'px';
     circle.style.top = objectY + 'px';
     
-    // Bar element'ine ekle
+    // Add to bar element
     const barElement = document.querySelector('.bar');
     barElement.appendChild(circle);
     
-    // Obje datasına element referansını ekle
+    // Add element reference to object data
     objData.element = circle;
     
     return circle;
 }
 
-// ==================== GÃ–RSEL OBJE FONKSÄ°YONLARI ====================
+// ==================== VISUAL OBJECT FUNCTIONS ====================
 
 function createVisualObject(objData) {
-    // Daire elementi oluştur
+    // Create circle element
     const circle = document.createElement('div');
     circle.className = 'seesaw-object';
     
-    // Ağırlık etiketi
+    // Weight label
     circle.textContent = objData.weight + 'kg';
     
-    // Sadece dinamik stiller (renk ve pozisyon)
+    // Only dynamic styles (color and position)
     circle.style.backgroundColor = getObjectColor(objData.weight);
     
-    // OBJEYI BAR ELEMENT'Ä°NE EKLEYELİM - böylece bar ile birlikte hareket eder
+    // ADD OBJECT TO BAR ELEMENT - so it moves together with bar
     const barElement = document.querySelector('.bar');
     
-    // Bar üzerindeki pozisyon (bar merkezi = 0, sol -, sağ +)
-    const barCenter = 200; // Bar genişliği 400px, merkezi 200px
-    const objectX = barCenter + objData.position - 20; // -20 merkezleme
-    const objectY = -50; // Bar'ın üstünde
+    // Position on bar (bar center = 0, left -, right +)
+    const barCenter = 200; // Bar width 400px, center 200px
+    const objectX = barCenter + objData.position - 20; // -20 for centering
+    const objectY = -50; // Above the bar
     
     circle.style.left = objectX + 'px';
     circle.style.top = objectY + 'px';
     
-    // BAR ELEMENT'İNE ekle (container'a değil)
+    // Add to BAR ELEMENT (not container)
     barElement.appendChild(circle);
     
-    // Obje datasına element referansını ekle
+    // Add element reference to object data
     objData.element = circle;
     
-    logToConsole(`Obje oluşturuldu: pos=${objData.position}, x=${objectX}`);
+    logToConsole(`Object created: pos=${objData.position}, x=${objectX}`);
     
     return circle;
 }
 
 function getObjectColor(weight) {
-    // Ağırlığa göre renk - açık mavi'den koyu mavi'ye
+    // Color based on weight - light blue to dark blue
     const intensity = weight / CONSTANTS.MAX_WEIGHT;
-    const blue = Math.floor(100 + (155 * intensity)); // 100-255 arası
+    const blue = Math.floor(100 + (155 * intensity)); // 100-255 range
     return `rgb(50, 150, ${blue})`;
 }
 
 function removeAllVisualObjects() {
-    // Bar içindeki objeleri temizle
+    // Clean objects inside bar
     const barElement = document.querySelector('.bar');
     const existingObjects = barElement.querySelectorAll('.seesaw-object');
     existingObjects.forEach(obj => obj.remove());
 }
 
 function recreateAllVisualObjects() {
-    // Önce mevcut görsel objeleri temizle
+    // First clean existing visual objects
     removeAllVisualObjects();
     
-    // Sonra her obje için yeniden oluştur
+    // Then recreate for each object
     seesawState.objects.forEach(objData => {
         if (objData.element) {
-            objData.element = null; // Referansı temizle
+            objData.element = null; // Clear reference
         }
         createVisualObject(objData);
     });
     
-    // Bar zaten doğru açıda döndürülecek, objeler de birlikte dönecek
+    // Bar will already be rotated at correct angle, objects will rotate together
     if (seesawState.currentAngle !== 0) {
         const barElement = document.querySelector('.bar');
         barElement.style.transform = `translateX(-50%) rotate(${seesawState.currentAngle}deg)`;
@@ -302,43 +302,43 @@ function convertClickToPosition(clickX, clickableElement) {
 }
 
 function handleClickableClick(event) {
-    // COOLDOWN kontrolü
+    // COOLDOWN check
     if (isClickCooldown) {
-        logToConsole('Çok hızlı tıklıyorsun! 1 saniye bekle.');
+        logToConsole('Clicking too fast! Wait 1 second.');
         return;
     }
     
     const clickableElement = event.target;
     const clickPosition = convertClickToPosition(event.clientX, clickableElement);
     
-    // Mevcut nextWeight'i kullan
+    // Use current nextWeight
     const currentWeight = nextWeight;
     
     if (clickPosition < CONSTANTS.MIN_POSITION || clickPosition > CONSTANTS.MAX_POSITION) {
-        logToConsole('Tıklama alanı dışında!');
+        logToConsole('Click outside allowed area!');
         return;
     }
     
-    // COOLDOWN başlat
+    // Start COOLDOWN
     isClickCooldown = true;
     setTimeout(() => {
         isClickCooldown = false;
-        logToConsole('Tekrar tıklayabilirsin!');
-    }, 1000); // 1 saniye
+        logToConsole('You can click again!');
+    }, 1000); // 1 second
     
     const newObject = addObject(clickPosition, currentWeight);
     
-    // DÜŞME ANIMASYONU ile görsel obje oluştur
+    // Create visual object with FALLING ANIMATION
     createFallingObject(newObject);
     
-    // Yeni ağırlık üret
+    // Generate new weight
     nextWeight = generateRandomWeight();
     updateUI();
     
-    logToConsole(`${currentWeight}kg obje düşürüldü (pozisyon: ${clickPosition.toFixed(1)})`);
+    logToConsole(`${currentWeight}kg object dropped (position: ${clickPosition.toFixed(1)})`);
 }
 
-// ==================== OBJE YÃ–NETÄ°MÄ° ====================
+// ==================== OBJECT MANAGEMENT ====================
 
 function addObject(position, weight) {
     const newObject = {
@@ -369,12 +369,12 @@ function updateTorqueAndWeights() {
         }
     });
     
-    logToConsole(`Sol: ${seesawState.leftWeight}kg (torque: ${seesawState.leftTorque})`);
-    logToConsole(`Sağ: ${seesawState.rightWeight}kg (torque: ${seesawState.rightTorque})`);
+    logToConsole(`Left: ${seesawState.leftWeight}kg (torque: ${seesawState.leftTorque})`);
+    logToConsole(`Right: ${seesawState.rightWeight}kg (torque: ${seesawState.rightTorque})`);
 }
 
 function calculateNewAngle() {
-    // PDF'teki örnek formül: Math.max(-30, Math.min(30, (rightTorque - leftTorque) / 10))
+    // Formula from PDF: Math.max(-30, Math.min(30, (rightTorque - leftTorque) / 10))
     const angle = Math.max(-30, Math.min(30, (seesawState.rightTorque - seesawState.leftTorque) / 10));
     return angle;
 }
@@ -382,10 +382,10 @@ function calculateNewAngle() {
 function updateSeesaw() {
     updateTorqueAndWeights();
     
-    // Yeni açıyı hesapla
+    // Calculate new angle
     const newAngle = calculateNewAngle();
     
-    // Açı değiştiyse animasyon yap
+    // If angle changed, animate
     if (Math.abs(newAngle - seesawState.currentAngle) > 0.1) {
         seesawState.currentAngle = newAngle;
         animateSeesawRotation(newAngle);
@@ -394,7 +394,7 @@ function updateSeesaw() {
     updateUI();
 }
 
-// ==================== UI GÃœNCELLEMELERÄ° ====================
+// ==================== UI UPDATES ====================
 
 function updateUI() {
     document.querySelector('.options .item:nth-child(1) .value').textContent = nextWeight.toFixed(1) + ' kg';
@@ -406,7 +406,7 @@ function updateUI() {
     document.querySelector('.options .item:nth-child(4) .value').textContent = newAngle.toFixed(1) + ' degre';
 }
 
-// ==================== LOCAL STORAGE Ä°ÅžLEMLERÄ° ====================
+// ==================== LOCAL STORAGE OPERATIONS ====================
 
 function saveState() {
     try {
@@ -414,7 +414,7 @@ function saveState() {
             objects: seesawState.objects.map(obj => ({
                 weight: obj.weight,
                 position: obj.position
-                // element'i kaydetmiyoruz çünkü DOM objesi
+                // not saving element because it's DOM object
             })),
             currentAngle: seesawState.currentAngle,
             leftTorque: seesawState.leftTorque,
@@ -425,9 +425,9 @@ function saveState() {
         };
         
         localStorage.setItem('seesawState', JSON.stringify(stateToSave));
-        logToConsole('Durum kaydedildi!');
+        logToConsole('State saved!');
     } catch (error) {
-        logToConsole('Kaydetme hatası: ' + error.message);
+        logToConsole('Save error: ' + error.message);
     }
 }
 
@@ -445,15 +445,15 @@ function loadState() {
             seesawState.rightWeight = parsedState.rightWeight || 0;
             nextWeight = parsedState.nextWeight || generateRandomWeight();
             
-            // Görsel objeleri yeniden oluştur
+            // Recreate visual objects
             recreateAllVisualObjects();
             
-            logToConsole('Önceki durum yüklendi: ' + seesawState.objects.length + ' obje bulundu');
+            logToConsole('Previous state loaded: ' + seesawState.objects.length + ' objects found');
         } else {
-            logToConsole('Yeni seesaw başlatıldı');
+            logToConsole('New seesaw started');
         }
     } catch (error) {
-        logToConsole('Yükleme hatası: ' + error.message);
+        logToConsole('Load error: ' + error.message);
         resetSeesaw();
     }
 }
@@ -467,23 +467,23 @@ function resetSeesaw() {
     seesawState.rightWeight = 0;
     nextWeight = generateRandomWeight();
     
-    // Görsel objeleri temizle
+    // Clean visual objects
     removeAllVisualObjects();
     
-    // Bar'ı düz konuma getir
+    // Return bar to flat position
     const barElement = document.querySelector('.bar');
     barElement.style.transition = 'transform 0.8s ease-out';
-    barElement.style.transformOrigin = 'center bottom'; // Pivot noktası
-    barElement.style.transform = 'translateX(-50%) rotate(0deg)'; // Merkez + düz
+    barElement.style.transformOrigin = 'center bottom'; // Pivot point
+    barElement.style.transform = 'translateX(-50%) rotate(0deg)'; // Center + flat
     
     localStorage.removeItem('seesawState');
     document.querySelector('.console_log').innerHTML = '';
     
-    logToConsole('Seesaw sıfırlandı!');
+    logToConsole('Seesaw reset!');
     updateUI();
 }
 
-// ==================== TEST FONKSÄ°YONLARI ====================
+// ==================== TEST FUNCTIONS ====================
 
 function addTestObject(position, weight) {
     const newObject = {
@@ -493,16 +493,16 @@ function addTestObject(position, weight) {
     };
     
     seesawState.objects.push(newObject);
-    createFallingObject(newObject); // Animasyonlu ekle
-    logToConsole(`Test objesi düşürüldü: ${weight}kg, pozisyon: ${position}`);
+    createFallingObject(newObject); // Add with animation
+    logToConsole(`Test object dropped: ${weight}kg, position: ${position}`);
     
     return newObject;
 }
 
-// ==================== BAÅžLATMA ====================
+// ==================== INITIALIZATION ====================
 
 function initializeSeesaw() {
-    logToConsole('Seesaw başlatılıyor...');
+    logToConsole('Initializing seesaw...');
     
     const clickableElement = document.querySelector('.clickable');
     clickableElement.addEventListener('click', handleClickableClick);
@@ -513,11 +513,11 @@ function initializeSeesaw() {
     loadState();
     updateUI();
     
-    logToConsole('Hazır! Yeşil alana tıklayarak obje ekleyebilirsin!');
-    logToConsole('Tıklama cooldown: 1 saniye (devamlı spam engelleme)');
-    logToConsole('Test için console\'da şunları deneyebilirsin:');
-    logToConsole('addTestObject(-100, 5) // Sol tarafa 5kg obje');
-    logToConsole('addTestObject(150, 3)  // Sağ tarafa 3kg obje');
+    logToConsole('Ready! Click on green area to add objects!');
+    logToConsole('Click cooldown: 1 second (prevents spam)');
+    logToConsole('For testing, try in console:');
+    logToConsole('addTestObject(-100, 5) // 5kg object on left');
+    logToConsole('addTestObject(150, 3)  // 3kg object on right');
 }
 
 document.addEventListener('DOMContentLoaded', initializeSeesaw);
