@@ -127,7 +127,7 @@ body {
     border-radius: 5px;
 }
 
-/* Seesaw objeleri için stiller */
+
 .seesaw-object {
     position: absolute;
     width: 40px;
@@ -141,19 +141,17 @@ body {
     color: white;
 }
 
-/* Düşen obje animasyonu */
+
 .seesaw-object.falling {
     animation: fallDown 2s linear forwards;
 }
 
-/* Animasyon keyframes */
+
 @keyframes fallDown {
     0% {
         transform: translateY(0px);
-        opacity: 0.8;
     }
     100% {
         transform: translateY(300px);
-        opacity: 1.0;
     }
 }
